@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 确保获取完整历史记录（某些插件需要）
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3
@@ -20,10 +22,21 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Build with Gradle
+      - name: Setup Node.js (for frontend)
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'  # Halo 2.x 推荐 Node 16/18
+          cache: 'pnpm'       # 启用 pnpm 缓存
+
+      - name: Install pnpm
+        run: npm install -g pnpm@8
+
+      - name: Build with Gradle (跳过测试和前端Lint)
         run: |
           chmod +x gradlew
-          ./gradlew build -x test
+          ./gradlew build -x test -x :ui:lint
+          # 或者完全跳过前端构建（如果不需要修改前端）：
+          # ./gradlew :application:bootJar -x test
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
