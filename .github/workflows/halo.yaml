@@ -3,18 +3,11 @@ name: Build and Push Halo Docker Image
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-env:
-  REGISTRY: docker.io
-  IMAGE_NAME: arthascnhub/arthasdevhalo
-  VERSION: latest
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
 
     steps:
       - name: Checkout code
@@ -22,7 +15,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      # ===== 前端构建 =====
+      # ===== Node.js 环境 =====
       - name: Setup Node.js 20
         uses: actions/setup-node@v3
         with:
@@ -30,8 +23,12 @@ jobs:
           cache: 'pnpm'
 
       - name: Install pnpm 9
-        run: corepack enable && corepack prepare pnpm@9.0.0 --activate
+        run: |
+          npm install -g pnpm@9
+          echo "$(npm root -g)/bin" >> $GITHUB_PATH
+          pnpm -v
 
+      # ===== 前端构建 =====
       - name: Build UI
         working-directory: ./ui
         run: |
