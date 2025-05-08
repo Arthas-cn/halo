@@ -3,41 +3,61 @@ name: Build and Push Halo Docker Image
 on:
   push:
     branches: [ "main" ]
-  release:
-    types: [published]
-
-concurrency: 
-  group: ${{github.workflow}} - ${{github.ref}}
-  cancel-in-progress: true
 
 env:
-  REGISTRY: docker.io
-  IMAGE_NAME: arthascnhub/arthasdevhalo
-  VERSION: latest
+  PNPM_HOME: /home/runner/.local/share/pnpm
+  NPM_GLOBAL_BIN: /usr/local/lib/node_modules/.bin
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # ===== 使用官方推荐的环境设置方式 =====
-      - name: Setup Node.js 20 with corepack
+      # ===== 关键修复步骤 =====
+      - name: Setup Node.js 20
         uses: actions/setup-node@v3
         with:
           node-version: '20'
           cache: 'pnpm'
-          cache-dir: ./ui  # 指定前端lock文件位置
-          check-latest: true
+          cache-dir: ./ui
+        env:
+          PATH: ${{ env.PNPM_HOME }}:${{ env.NPM_GLOBAL_BIN }}:${{ env.PATH }}
 
-      # ===== 官方推荐的pnpm安装方式 =====
-      - name: Enable pnpm via corepack
+      - name: Install pnpm via corepack
         run: |
-          corepack enable
-          corepack prepare pnpm@9 --activate
-          echo "pnpm path: $(which pnpm)" >> $GITHUB_STEP_SUMMARY
+          # 强制清理旧版本
+          npm uninstall -g pnpm || true
+          
+          # 完整安装流程
+          sudo npm install -g corepack --force
+          corepack enable --install-directory=$PNPM_HOME
+          corepack prepare pnpm@9.0.0 --activate
+          
+          # 路径三重保障
+          echo "$PNPM_HOME" >> $GITHUB_PATH
+          echo "$NPM_GLOBAL_BIN" >> $GITHUB_PATH
+          echo "$HOME/.npm-global/bin" >> $GITHUB_PATH
+
+          # 权限修复
+          sudo chmod -R 777 $PNPM_HOME
+          sudo chmod -R 777 $(npm root -g)
+
+      # ===== 验证步骤 =====
+      - name: Verify Installation
+        run: |
+          echo "=== PATH ==="
+          echo $PATH | tr ':' '\n'
+          echo "=== pnpm ==="
+          which pnpm
+          pnpm -v
+          echo "=== 文件位置 ==="
+          ls -l $(which pnpm)
+          ls -l $PNPM_HOME/pnpm
 
       # ===== 前端构建 =====
       - name: Build UI
