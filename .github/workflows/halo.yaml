@@ -4,6 +4,11 @@ on:
   push:
     branches: [ "main" ]
 
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: arthascnhub/arthasdevhalo
+  VERSION: latest
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -15,18 +20,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install pnpm 9
-        run: |
-          npm install -g pnpm@9
-          echo "$(npm root -g)/bin" >> $GITHUB_PATH
-          pnpm -v
-
-      # ===== Node.js 环境 =====
+      # ===== Node.js 环境设置（必须先于 pnpm 安装）=====
       - name: Setup Node.js 20
         uses: actions/setup-node@v3
         with:
           node-version: '20'
           cache: 'pnpm'
+          cache-dir: ./ui  # 关键修复点：指定锁定文件位置
+
+      # ===== pnpm 安装 =====
+      - name: Install pnpm 9
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.0.0 --activate
+          echo "pnpm path: $(which pnpm)"  # 调试信息
 
       # ===== 前端构建 =====
       - name: Build UI
