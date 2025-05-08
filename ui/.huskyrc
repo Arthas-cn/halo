@@ -1,0 +1,3 @@
+#!/bin/sh
+# 将您的pnpm路径添加到PATH中
+export PATH="$PATH:$HOME/.npm-global/bin:$HOME/.nvm/versions/node/*/bin:$HOME/.pnpm-global/bin:$HOME/.pnpm-store/*/node_modules/.bin:$HOME/.local/share/pnpm/node_modules/.bin" 
