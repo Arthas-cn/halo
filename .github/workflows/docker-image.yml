@@ -11,6 +11,10 @@ env:
   IMAGE_NAME: arthascnhub/arthasdevhalo
   VERSION: latest  # 或使用 ${{ github.sha }}
 
+run-name: |
+    echo "Username: ${{ secrets.DOCKERHUB_USERNAME }}"
+    echo "Token: ${{ secrets.DOCKERHUB_TOKEN != '' }}"
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
