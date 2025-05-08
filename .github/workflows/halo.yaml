@@ -22,7 +22,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      # ===== 前端构建（保持与 Dockerfile 兼容）=====
+      # ===== 前端构建 =====
       - name: Setup Node.js 20
         uses: actions/setup-node@v3
         with:
@@ -38,7 +38,7 @@ jobs:
           pnpm install --frozen-lockfile
           pnpm build
 
-      # ===== 后端构建（完全兼容现有 Dockerfile）=====
+      # ===== 后端构建 =====
       - name: Set up JDK 21
         uses: actions/setup-java@v3
         with:
@@ -51,7 +51,7 @@ jobs:
           ./gradlew :application:bootJar -x test
           ls -lh application/build/libs/*.jar
 
-      # ===== 容器构建（保持 Dockerfile 原样）=====
+      # ===== 容器构建 =====
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -69,5 +69,5 @@ jobs:
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
-          build-args:
-            JAR_FILE: "application/build/libs/*.jar"  # 完全匹配现有 Dockerfile 参数
+          build-args: |
+            JAR_FILE=application/build/libs/*.jar  # 关键修复点
