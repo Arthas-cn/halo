@@ -15,18 +15,18 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install pnpm 9
+        run: |
+          npm install -g pnpm@9
+          echo "$(npm root -g)/bin" >> $GITHUB_PATH
+          pnpm -v
+
       # ===== Node.js 环境 =====
       - name: Setup Node.js 20
         uses: actions/setup-node@v3
         with:
           node-version: '20'
           cache: 'pnpm'
-
-      - name: Install pnpm 9
-        run: |
-          npm install -g pnpm@9
-          echo "$(npm root -g)/bin" >> $GITHUB_PATH
-          pnpm -v
 
       # ===== 前端构建 =====
       - name: Build UI
