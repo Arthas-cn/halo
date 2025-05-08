@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build and Push Halo Docker Image
 
 on:
   push:
@@ -9,26 +9,30 @@ on:
 env:
   REGISTRY: docker.io
   IMAGE_NAME: arthascnhub/arthasdevhalo
-  VERSION: latest  # 或使用 ${{ github.sha }} 作为唯一版本号
+  VERSION: latest  # 或使用 ${{ github.sha }}
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest  # GitHub托管Runner
+    runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up JDK 17 (兼容Alibaba Cloud Linux 3)
+      - name: Set up JDK 21
         uses: actions/setup-java@v3
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
 
-      - name: Build with Maven (示例)
+      - name: Build with Gradle
         run: |
-          mvn clean package -DskipTests
-          ls -lh target/*.jar
+          chmod +x gradlew
+          ./gradlew build -x test
+          ls -lh application/build/libs/*.jar
+
+      - name: Set up QEMU (多架构支持)
+        uses: docker/setup-qemu-action@v2
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -43,9 +47,11 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
+          file: ./Dockerfile
+          platforms: linux/amd64  # 明确指定阿里云服务器的架构
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          build-args: |
-            BASE_IMAGE=eclipse-temurin:17-jre-jammy  # 与Alibaba Cloud Linux兼容的镜像
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
