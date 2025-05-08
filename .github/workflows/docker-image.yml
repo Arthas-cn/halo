@@ -22,7 +22,7 @@ on:
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAME: arthascnhub/arthasdevhalo
+  IMAGE_NAME: arthascn001/arthas_dev_halo
   # 使用更有意义的版本号命名策略
   VERSION: ${{ github.ref == 'refs/heads/main' && 'latest' || github.ref_name }}
 
