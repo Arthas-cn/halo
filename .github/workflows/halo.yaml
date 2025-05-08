@@ -3,6 +3,12 @@ name: Build and Push Halo Docker Image
 on:
   push:
     branches: [ "main" ]
+  release:
+    types: [published]
+
+concurrency: 
+  group: ${{github.workflow}} - ${{github.ref}}
+  cancel-in-progress: true
 
 env:
   REGISTRY: docker.io
@@ -10,30 +16,28 @@ env:
   VERSION: latest
 
 jobs:
-  build-and-push:
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # ===== Node.js 环境设置（必须先于 pnpm 安装）=====
-      - name: Setup Node.js 20
+      # ===== 使用官方推荐的环境设置方式 =====
+      - name: Setup Node.js 20 with corepack
         uses: actions/setup-node@v3
         with:
           node-version: '20'
           cache: 'pnpm'
-          cache-dir: ./ui  # 关键修复点：指定锁定文件位置
+          cache-dir: ./ui  # 指定前端lock文件位置
+          check-latest: true
 
-      # ===== pnpm 安装 =====
-      - name: Install pnpm 9
+      # ===== 官方推荐的pnpm安装方式 =====
+      - name: Enable pnpm via corepack
         run: |
           corepack enable
-          corepack prepare pnpm@9.0.0 --activate
-          echo "pnpm path: $(which pnpm)"  # 调试信息
+          corepack prepare pnpm@9 --activate
+          echo "pnpm path: $(which pnpm)" >> $GITHUB_STEP_SUMMARY
 
       # ===== 前端构建 =====
       - name: Build UI
@@ -74,4 +78,4 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
           build-args: |
-            JAR_FILE=application/build/libs/*.jar  # 关键修复点
+            JAR_FILE=application/build/libs/*.jar
